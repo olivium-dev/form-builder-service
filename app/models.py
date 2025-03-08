@@ -1,6 +1,6 @@
 from collections import Counter
-from typing import Any, Dict, List, Tuple
-from pydantic import BaseModel, create_model
+from typing import Any, Dict, List, Tuple, Optional, Type
+from pydantic import BaseModel, create_model, Field
 
 # Mapping from configuration type strings to Python types (with required ellipsis)
 type_mapping: Dict[str, Tuple[Any, Any]] = {
@@ -13,46 +13,67 @@ type_mapping: Dict[str, Tuple[Any, Any]] = {
 
 def create_component_model(component: Dict[str, Any]) -> BaseModel:
     """
-    Dynamically creates a Pydantic model for a UI component.
-    The model includes a 'style' field and fields for each attribute.
+    Dynamically creates a Pydantic model for a component based on its configuration.
+    
+    Args:
+        component: A dictionary containing the component configuration.
+        
+    Returns:
+        A Pydantic BaseModel class for the component.
     """
-    model_fields = {}
-
-    # Process the 'style' field if defined
-    if "style" in component and isinstance(component["style"], dict):
-        style_type = component["style"].get("type", "string").lower()
-        model_fields["style"] = type_mapping.get(style_type, (str, ...))
+    # Extract component name and attributes
+    component_name = component.get("componentName", "UnknownComponent")
+    attributes = component.get("attributes", [])
     
-    # Process attributes if defined
-    if "attributes" in component and isinstance(component["attributes"], list):
-        for attr in component["attributes"]:
-            attr_name = attr.get("name")
-            attr_type_str = attr.get("type", "string").lower()
-            if attr_name:
-                model_fields[attr_name] = type_mapping.get(attr_type_str, (str, ...))
+    # Create field definitions for the model
+    field_definitions = {
+        "style": (Optional[str], None),
+        "componentID": (str, Field(..., description="Unique identifier for the component within the template"))
+    }
     
-    # Generate a model name based on the component name
-    model_name = component.get("componentName", "UnnamedComponent").replace(" ", "") + "Model"
-    return create_model(model_name, **model_fields)
+    # Add attributes from the component configuration
+    for attr in attributes:
+        attr_name = attr.get("name")
+        attr_type = attr.get("type")
+        
+        if attr_name and attr_type:
+            # Map JSON types to Python types
+            type_mapping = {
+                "string": str,
+                "number": float,
+                "integer": int,
+                "boolean": bool,
+                "array": list,
+                "object": dict
+            }
+            
+            python_type = type_mapping.get(attr_type, Any)
+            field_definitions[attr_name] = (Optional[python_type], None)
+    
+    # Create and return the model
+    model_name = f"{component_name.replace(' ', '')}Model"
+    return create_model(model_name, **field_definitions)
 
 def create_template_model(template_name: str, component_list: List[str], component_models: Dict[str, BaseModel]) -> BaseModel:
     """
-    Dynamically creates a Pydantic model for a form template.
-    Each template is defined as a list of component names.
-    Duplicate component names are handled by appending an index.
-    """
-    fields = {}
-    counter = Counter(component_list)
-    occurrence: Dict[str, int] = {}
-
-    for comp in component_list:
-        if comp not in component_models:
-            raise ValueError(f"Component '{comp}' is not defined in the components configuration.")
-        occurrence[comp] = occurrence.get(comp, 0) + 1
-        field_name = comp.replace(" ", "")
-        if counter[comp] > 1:
-            field_name = f"{field_name}_{occurrence[comp]}"
-        fields[field_name] = (component_models[comp], ...)
+    Dynamically creates a Pydantic model for a template based on its components.
     
-    model_name = template_name[0].upper() + template_name[1:] + "Template"
-    return create_model(model_name, **fields) 
+    Args:
+        template_name: The name of the template.
+        component_list: A list of component names in the template.
+        component_models: A dictionary mapping component names to their models.
+        
+    Returns:
+        A Pydantic BaseModel class for the template.
+    """
+    # Create field definitions for the template model
+    field_definitions = {}
+    
+    # Add each component as a field in the template model
+    for component_name in component_list:
+        if component_name in component_models:
+            field_definitions[component_name] = (component_models[component_name], ...)
+    
+    # Create and return the model
+    model_name = f"{template_name.capitalize()}Model"
+    return create_model(model_name, **field_definitions) 

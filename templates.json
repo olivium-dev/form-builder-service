@@ -1,6 +1,7 @@
 {
     "simpleForm": [
       {
+        "componentID": "header-1",
         "componentName": "Header",
         "description": "A top area containing the screen's title or heading.",
         "style": {
@@ -26,6 +27,7 @@
         "validations": []
       },
       {
+        "componentID": "text-input-1",
         "componentName": "Text Input",
         "description": "A single-line text field for entering information.",
         "style": {
@@ -56,6 +58,7 @@
         ]
       },
       {
+        "componentID": "date-input-1",
         "componentName": "Date Input",
         "description": "A component to select a date (e.g. birthday).",
         "style": {
@@ -95,6 +98,7 @@
         ]
       },
       {
+        "componentID": "voice-note-1",
         "componentName": "Voice Note",
         "description": "A component for recording and uploading voice notes.",
         "style": {
@@ -145,6 +149,7 @@
     ],
     "advancedForm": [
       {
+        "componentID": "header-2",
         "componentName": "Header",
         "description": "A top area containing the screen's title or heading.",
         "style": {
@@ -170,6 +175,7 @@
         "validations": []
       },
       {
+        "componentID": "text-input-2",
         "componentName": "Text Input",
         "description": "A single-line text field for entering information.",
         "style": {
@@ -200,6 +206,7 @@
         ]
       },
       {
+        "componentID": "slider-1",
         "componentName": "Slider with Label",
         "description": "A track bar for selecting a numeric value, accompanied by a label.",
         "style": {
@@ -253,6 +260,7 @@
         ]
       },
       {
+        "componentID": "phone-input-1",
         "componentName": "Phone Input",
         "description": "An input for phone numbers, including country-code selection and verification.",
         "style": {

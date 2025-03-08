@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from fastapi import HTTPException
 
 from app.config import load_config
@@ -10,6 +10,9 @@ logger = logging.getLogger(__name__)
 COMPONENTS_CONFIG_FILE = "components_config.json"
 TEMPLATES_FILE = "templates.json"
 
+components_config = load_config(COMPONENTS_CONFIG_FILE)
+templates_data = load_config(TEMPLATES_FILE)
+
 def get_all_templates():
     """
     Get all available templates.
@@ -17,12 +20,7 @@ def get_all_templates():
     Returns:
         Dict[str, List[Dict[str, Any]]]: Dictionary of template names and their component definitions
     """
-    try:
-        templates_data = load_config(TEMPLATES_FILE)
-        return templates_data
-    except Exception as e:
-        logger.error(f"Error loading templates: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error loading templates: {str(e)}")
+    return templates_data
 
 def get_template_by_name(template_name: str):
     """
@@ -34,18 +32,10 @@ def get_template_by_name(template_name: str):
     Returns:
         List[Dict[str, Any]]: List of component definitions for the template
     """
-    try:
-        templates_data = load_config(TEMPLATES_FILE)
-        
-        if template_name not in templates_data:
-            raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
-        
-        return templates_data[template_name]
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error loading template '{template_name}': {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error loading template: {str(e)}")
+    if template_name not in templates_data:
+        raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
+    
+    return templates_data[template_name]
 
 def get_template_schema(template_name: str):
     """
@@ -57,55 +47,60 @@ def get_template_schema(template_name: str):
     Returns:
         Dict[str, Any]: Schema definition for the template
     """
-    try:
-        template_components = get_template_by_name(template_name)
+    if template_name not in templates_data:
+        raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
+    
+    template_components = templates_data[template_name]
+    
+    # Extract component types and required fields
+    components = []
+    required_fields = []
+    
+    for component in template_components:
+        component_name = component.get("componentName")
+        component_id = component.get("componentID")
         
-        # Create a schema object
-        schema = {
-            "template_name": template_name,
-            "components": [],
-            "required_fields": []
-        }
+        if not component_name:
+            continue
         
-        # Process each component
-        for component in template_components:
-            comp_name = component.get("componentName")
-            if not comp_name:
-                continue
-                
-            # Get output type
-            output_type = "none"
-            if "output" in component and "type" in component["output"]:
-                output_type = component["output"]["type"]
-            
-            # Check if the component has required validation
-            is_required = False
-            if "validations" in component:
-                for validation in component["validations"]:
-                    if validation.get("type") == "required":
-                        is_required = True
-                        break
-            
-            # Add to schema
-            comp_schema = {
-                "name": comp_name,
-                "type": output_type,
-                "required": is_required,
-                "attributes": component.get("attributes", [])
-            }
-            
-            schema["components"].append(comp_schema)
-            
-            # Add to required fields if necessary
-            if is_required and output_type != "none":
-                schema["required_fields"].append(comp_name)
+        # Find the component definition in components_config
+        component_def = next((c for c in components_config if c.get("componentName") == component_name), None)
         
-        return schema
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error generating schema for template '{template_name}': {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error generating schema: {str(e)}")
+        if not component_def:
+            continue
+        
+        # Determine if the component is required based on validations
+        is_required = False
+        if "validations" in component_def:
+            for validation in component_def["validations"]:
+                if validation.get("type") == "required":
+                    is_required = True
+                    break
+        
+        # Get the output type
+        output_type = "none"
+        if "output" in component_def and "type" in component_def["output"]:
+            output_type = component_def["output"]["type"]
+        
+        # Add component to the schema
+        components.append({
+            "name": component_name,
+            "type": output_type,
+            "required": is_required,
+            "componentID": component_id,
+            "attributes": component_def.get("attributes", [])
+        })
+        
+        # Add to required fields if necessary
+        if is_required:
+            required_fields.append(component_name)
+    
+    # Construct and return the schema
+    return {
+        "template_name": template_name,
+        "components": components,
+        "required_fields": required_fields
+    }
 
 def get_all_components():
     """
@@ -114,12 +109,7 @@ def get_all_components():
     Returns:
         List[Dict[str, Any]]: List of all component definitions
     """
-    try:
-        components_data = load_config(COMPONENTS_CONFIG_FILE)
-        return components_data
-    except Exception as e:
-        logger.error(f"Error loading components: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error loading components: {str(e)}")
+    return components_config
 
 def get_component_by_name(component_name: str):
     """
@@ -131,16 +121,9 @@ def get_component_by_name(component_name: str):
     Returns:
         Dict[str, Any]: Component definition
     """
-    try:
-        components_data = load_config(COMPONENTS_CONFIG_FILE)
-        
-        for component in components_data:
-            if component.get("componentName") == component_name:
-                return component
-        
+    component = next((c for c in components_config if c.get("componentName") == component_name), None)
+    
+    if not component:
         raise HTTPException(status_code=404, detail=f"Component '{component_name}' not found")
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error loading component '{component_name}': {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error loading component: {str(e)}") 
+    
+    return component 
