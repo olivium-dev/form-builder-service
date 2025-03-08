@@ -56,12 +56,13 @@ def create_post_endpoint(template_name: str, model: BaseModel) -> Callable:
                 if comp.get("componentID") and comp.get("componentName")
             }
             
-            # Transform the data to use componentName as keys
+            # Transform the data to use componentName as keys and extract only the values
             transformed_data = {}
-            for component_id, value in data_dict.items():
+            for component_id, component_data in data_dict.items():
                 if component_id in id_to_name_map:
                     component_name = id_to_name_map[component_id]
-                    transformed_data[component_name] = value
+                    # Store only the value, not the entire component data
+                    transformed_data[component_name] = component_data.get("value")
             
             # Insert the data into the database using the table
             stmt = insert(table).values(submission_id=submission_id, data=transformed_data)
@@ -130,12 +131,13 @@ def create_get_endpoint(template_name: str, model: BaseModel) -> Callable:
                 if comp.get("componentID") and comp.get("componentName")
             }
             
-            # Transform the data to use componentID as keys
+            # Transform the data to use componentID as keys and wrap values in the expected format
             transformed_data = {}
             for component_name, value in data.items():
                 if component_name in name_to_id_map:
                     component_id = name_to_id_map[component_name]
-                    transformed_data[component_id] = value
+                    # Wrap the value in a dictionary with a "value" key
+                    transformed_data[component_id] = {"value": value}
             
             logger.info(f"Retrieved {template_name} submission with ID: {form_id}")
             

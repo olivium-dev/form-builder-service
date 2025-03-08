@@ -11,6 +11,10 @@ type_mapping: Dict[str, Tuple[Any, Any]] = {
     "array": (list, ...),
 }
 
+class ComponentValueModel(BaseModel):
+    """Base model for component values."""
+    value: Any
+
 def create_component_model(component: Dict[str, Any]) -> BaseModel:
     """
     Dynamically creates a Pydantic model for a component based on its configuration.
@@ -24,41 +28,15 @@ def create_component_model(component: Dict[str, Any]) -> BaseModel:
     # Extract component name, ID, and attributes
     component_name = component.get("componentName", "UnknownComponent")
     component_id = component.get("componentID", "unknown-id")
-    attributes = component.get("attributes", [])
     output_type = component.get("output", {}).get("type", "none")
     
     # Skip creating models for components with output type "none"
     if output_type == "none":
         return None
     
-    # Create field definitions for the model
-    field_definitions = {
-        "value": (Optional[Any], None),  # The actual value of the component
-        "style": (Optional[str], None)
-    }
-    
-    # Add attributes from the component configuration
-    for attr in attributes:
-        attr_name = attr.get("name")
-        attr_type = attr.get("type")
-        
-        if attr_name and attr_type:
-            # Map JSON types to Python types
-            type_mapping = {
-                "string": str,
-                "number": float,
-                "integer": int,
-                "boolean": bool,
-                "array": list,
-                "object": dict
-            }
-            
-            python_type = type_mapping.get(attr_type, Any)
-            field_definitions[attr_name] = (Optional[python_type], None)
-    
-    # Create and return the model
+    # Create a simple model with just the value field
     model_name = f"{component_name.replace(' ', '')}Model"
-    return create_model(model_name, **field_definitions)
+    return ComponentValueModel
 
 def create_template_model(template_name: str, template_components: List[Dict[str, Any]], component_models: Dict[str, BaseModel]) -> BaseModel:
     """
@@ -87,7 +65,7 @@ def create_template_model(template_name: str, template_components: List[Dict[str
             
         if component_name in component_models and component_id:
             # Use componentID as the field name
-            field_definitions[component_id] = (Optional[component_models[component_name]], None)
+            field_definitions[component_id] = (ComponentValueModel, ...)
     
     # Create and return the model
     model_name = f"{template_name.capitalize()}Model"

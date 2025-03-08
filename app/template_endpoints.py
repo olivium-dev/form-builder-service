@@ -15,22 +15,22 @@ templates_data = load_config(TEMPLATES_FILE)
 
 def get_all_templates():
     """
-    Get all available templates.
-    
-    Returns:
-        Dict[str, List[Dict[str, Any]]]: Dictionary of template names and their component definitions
+    Returns all templates with their component definitions.
     """
     return templates_data
 
 def get_template_by_name(template_name: str):
     """
-    Get a specific template by name.
+    Returns a specific template by name.
     
     Args:
-        template_name: The name of the template to retrieve
+        template_name: The name of the template to retrieve.
         
     Returns:
-        List[Dict[str, Any]]: List of component definitions for the template
+        The template configuration if found.
+        
+    Raises:
+        HTTPException: If the template is not found.
     """
     if template_name not in templates_data:
         raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
@@ -39,13 +39,16 @@ def get_template_by_name(template_name: str):
 
 def get_template_schema(template_name: str):
     """
-    Get the schema for a specific template.
+    Returns the schema for a specific template.
     
     Args:
-        template_name: The name of the template to retrieve
+        template_name: The name of the template to get the schema for.
         
     Returns:
-        Dict[str, Any]: Schema definition for the template
+        A dictionary containing the template schema.
+        
+    Raises:
+        HTTPException: If the template is not found.
     """
     if template_name not in templates_data:
         raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
@@ -86,18 +89,17 @@ def get_template_schema(template_name: str):
                     is_required = True
                     break
         
-        # Add component to the schema
+        # Add component to the schema with simplified structure
         components.append({
             "name": component_name,
             "type": output_type,
             "required": is_required,
-            "componentID": component_id,
-            "attributes": component_def.get("attributes", [])
+            "componentID": component_id
         })
         
         # Add to required fields if necessary
         if is_required:
-            required_fields.append(component_id)
+            required_fields.append(component_id)  # Use componentID instead of component name
     
     # Construct and return the schema
     return {
@@ -108,22 +110,22 @@ def get_template_schema(template_name: str):
 
 def get_all_components():
     """
-    Get all available components.
-    
-    Returns:
-        List[Dict[str, Any]]: List of all component definitions
+    Returns all available components.
     """
     return components_config
 
 def get_component_by_name(component_name: str):
     """
-    Get a specific component by name.
+    Returns a specific component by name.
     
     Args:
-        component_name: The name of the component to retrieve
+        component_name: The name of the component to retrieve.
         
     Returns:
-        Dict[str, Any]: Component definition
+        The component configuration if found.
+        
+    Raises:
+        HTTPException: If the component is not found.
     """
     component = next((c for c in components_config if c.get("componentName") == component_name), None)
     
