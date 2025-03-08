@@ -4,6 +4,7 @@ from typing import Dict, Any, Callable
 from fastapi import Depends, Path, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from app.database import get_db
 from app.config import load_config
@@ -62,11 +63,9 @@ def create_post_endpoint(template_name: str, model: BaseModel) -> Callable:
             # Create a table name from the template name
             table_name = f"{template_name.lower()}_submissions"
             
-            # Insert the data into the database
-            db.execute(
-                f"INSERT INTO {table_name} (submission_id, data) VALUES (:submission_id, :data)",
-                {"submission_id": submission_id, "data": transformed_data}
-            )
+            # Insert the data into the database using text() for SQL
+            query = text(f"INSERT INTO {table_name} (submission_id, data) VALUES (:submission_id, :data)")
+            db.execute(query, {"submission_id": submission_id, "data": transformed_data})
             db.commit()
             
             logger.info(f"Saved {template_name} submission with ID: {submission_id}")
@@ -111,11 +110,9 @@ def create_get_endpoint(template_name: str, model: BaseModel) -> Callable:
             # Create a table name from the template name
             table_name = f"{template_name.lower()}_submissions"
             
-            # Query the database for the submission
-            result = db.execute(
-                f"SELECT data FROM {table_name} WHERE submission_id = :submission_id",
-                {"submission_id": form_id}
-            ).fetchone()
+            # Query the database for the submission using text() for SQL
+            query = text(f"SELECT data FROM {table_name} WHERE submission_id = :submission_id")
+            result = db.execute(query, {"submission_id": form_id}).fetchone()
             
             if not result:
                 raise HTTPException(status_code=404, detail=f"{template_name} submission with ID {form_id} not found")
