@@ -71,11 +71,17 @@ def create_post_endpoint(template_name: str, model: BaseModel) -> Callable:
             
             logger.info(f"Saved {template_name} submission with ID: {submission_id}")
             
-            # Return success response
+            # Return success response with simplified data
+            response_data = {}
+            for component_id, component_data in data_dict.items():
+                if component_id in id_to_name_map:
+                    # Include only the value in the response
+                    response_data[component_id] = {"value": component_data.get("value")}
+            
             return {
                 "message": f"{template_name} submitted successfully",
                 "submission_id": submission_id,
-                "data": transformed_data
+                "data": response_data
             }
         except Exception as e:
             logger.error(f"Error saving {template_name} submission: {str(e)}")
