@@ -1,7 +1,9 @@
 import logging
 import argparse
+import os
 from fastapi import FastAPI
 import uvicorn
+from dotenv import load_dotenv
 
 from app.config import load_config
 from app.models import create_component_model, create_template_model
@@ -15,12 +17,18 @@ from app.template_endpoints import (
     get_template_schema
 )
 
+# Load environment variables
+load_dotenv()
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Define configuration file paths
 COMPONENTS_CONFIG_FILE = "components_config.json"
 TEMPLATES_FILE = "templates.json"
+
+# Get root path from environment variables
+ROOT_PATH = os.getenv("ROOT_PATH", "")
 
 # Load configuration files
 components_config = load_config(COMPONENTS_CONFIG_FILE)
@@ -61,6 +69,9 @@ app = FastAPI(
     title="Form Builder Microservice",
     description="A dynamic, configuration-driven form builder service with PostgreSQL database.",
     version="1.0.0",
+    root_path=ROOT_PATH,  # Set the root path for the OpenAPI documentation
+    docs_url="/docs",  # Keep the docs URL as /docs
+    openapi_url="/openapi.json",  # Keep the OpenAPI URL as /openapi.json
 )
 
 # Initialize the database
