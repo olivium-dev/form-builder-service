@@ -83,4 +83,5 @@ jobs:
             --publish published=${{ inputs.external_port }},target=${{ inputs.internal_port }} \
             --replicas 1 \
             --env ConnectionStrings__DefaultConnection='Host=${{ inputs.db_host }};Database=${{ inputs.db_name }};Username=postgres;Password=${{ secrets.DB_PASSWORD_DEFAULT }};Trust Server Certificate=true;Port=5432' \
+            --env ROOT_PATH='/formbuilder' \
             '${IMAGE_PATH}'"
