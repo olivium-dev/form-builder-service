@@ -60,13 +60,22 @@ def get_template_schema(template_name: str):
         component_name = component.get("componentName")
         component_id = component.get("componentID")
         
-        if not component_name:
+        if not component_name or not component_id:
             continue
         
         # Find the component definition in components_config
         component_def = next((c for c in components_config if c.get("componentName") == component_name), None)
         
         if not component_def:
+            continue
+        
+        # Get the output type
+        output_type = "none"
+        if "output" in component_def and "type" in component_def["output"]:
+            output_type = component_def["output"]["type"]
+        
+        # Skip components with output type "none"
+        if output_type == "none":
             continue
         
         # Determine if the component is required based on validations
@@ -76,11 +85,6 @@ def get_template_schema(template_name: str):
                 if validation.get("type") == "required":
                     is_required = True
                     break
-        
-        # Get the output type
-        output_type = "none"
-        if "output" in component_def and "type" in component_def["output"]:
-            output_type = component_def["output"]["type"]
         
         # Add component to the schema
         components.append({
@@ -93,7 +97,7 @@ def get_template_schema(template_name: str):
         
         # Add to required fields if necessary
         if is_required:
-            required_fields.append(component_name)
+            required_fields.append(component_id)
     
     # Construct and return the schema
     return {

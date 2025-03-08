@@ -43,8 +43,9 @@ for comp in components_config:
         continue
     try:
         model = create_component_model(comp)
-        component_models[comp_name] = model
-        logger.info(f"Created model for component: {comp_name}")
+        if model:  # Only add models for components with output
+            component_models[comp_name] = model
+            logger.info(f"Created model for component: {comp_name}")
     except Exception as e:
         logger.error(f"Failed to create model for component {comp_name}: {e}")
         raise
@@ -53,11 +54,8 @@ for comp in components_config:
 template_models = {}
 for template_name, template_components in templates_data.items():
     try:
-        # Extract component names from the template components
-        component_names = [comp.get("componentName") for comp in template_components if comp.get("componentName")]
-        
-        # Create template model using the component names
-        model = create_template_model(template_name, component_names, component_models)
+        # Create template model using the component configurations
+        model = create_template_model(template_name, template_components, component_models)
         template_models[template_name] = model
         logger.info(f"Created template model for: {template_name}")
     except Exception as e:

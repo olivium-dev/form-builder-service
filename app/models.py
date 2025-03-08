@@ -21,14 +21,20 @@ def create_component_model(component: Dict[str, Any]) -> BaseModel:
     Returns:
         A Pydantic BaseModel class for the component.
     """
-    # Extract component name and attributes
+    # Extract component name, ID, and attributes
     component_name = component.get("componentName", "UnknownComponent")
+    component_id = component.get("componentID", "unknown-id")
     attributes = component.get("attributes", [])
+    output_type = component.get("output", {}).get("type", "none")
+    
+    # Skip creating models for components with output type "none"
+    if output_type == "none":
+        return None
     
     # Create field definitions for the model
     field_definitions = {
-        "style": (Optional[str], None),
-        "componentID": (str, Field(..., description="Unique identifier for the component within the template"))
+        "value": (Optional[Any], None),  # The actual value of the component
+        "style": (Optional[str], None)
     }
     
     # Add attributes from the component configuration
@@ -54,13 +60,13 @@ def create_component_model(component: Dict[str, Any]) -> BaseModel:
     model_name = f"{component_name.replace(' ', '')}Model"
     return create_model(model_name, **field_definitions)
 
-def create_template_model(template_name: str, component_list: List[str], component_models: Dict[str, BaseModel]) -> BaseModel:
+def create_template_model(template_name: str, template_components: List[Dict[str, Any]], component_models: Dict[str, BaseModel]) -> BaseModel:
     """
     Dynamically creates a Pydantic model for a template based on its components.
     
     Args:
         template_name: The name of the template.
-        component_list: A list of component names in the template.
+        template_components: A list of component configurations in the template.
         component_models: A dictionary mapping component names to their models.
         
     Returns:
@@ -69,10 +75,19 @@ def create_template_model(template_name: str, component_list: List[str], compone
     # Create field definitions for the template model
     field_definitions = {}
     
-    # Add each component as a field in the template model
-    for component_name in component_list:
-        if component_name in component_models:
-            field_definitions[component_name] = (component_models[component_name], ...)
+    # Add each component as a field in the template model, using componentID as the key
+    for component in template_components:
+        component_name = component.get("componentName")
+        component_id = component.get("componentID")
+        output_type = component.get("output", {}).get("type", "none")
+        
+        # Skip components with output type "none"
+        if output_type == "none":
+            continue
+            
+        if component_name in component_models and component_id:
+            # Use componentID as the field name
+            field_definitions[component_id] = (Optional[component_models[component_name]], None)
     
     # Create and return the model
     model_name = f"{template_name.capitalize()}Model"

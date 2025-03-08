@@ -6,8 +6,12 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.config import load_config
 
 logger = logging.getLogger(__name__)
+
+# Load templates data
+templates_data = load_config("templates.json")
 
 def create_post_endpoint(template_name: str, model: BaseModel) -> Callable:
     """
@@ -38,13 +42,30 @@ def create_post_endpoint(template_name: str, model: BaseModel) -> Callable:
             # Convert form data to a dictionary
             data_dict = form_data.model_dump()
             
+            # Get the template components
+            template_components = templates_data.get(template_name, [])
+            
+            # Create a mapping from componentID to componentName
+            id_to_name_map = {
+                comp.get("componentID"): comp.get("componentName")
+                for comp in template_components
+                if comp.get("componentID") and comp.get("componentName")
+            }
+            
+            # Transform the data to use componentName as keys
+            transformed_data = {}
+            for component_id, value in data_dict.items():
+                if component_id in id_to_name_map:
+                    component_name = id_to_name_map[component_id]
+                    transformed_data[component_name] = value
+            
             # Create a table name from the template name
             table_name = f"{template_name.lower()}_submissions"
             
             # Insert the data into the database
             db.execute(
                 f"INSERT INTO {table_name} (submission_id, data) VALUES (:submission_id, :data)",
-                {"submission_id": submission_id, "data": data_dict}
+                {"submission_id": submission_id, "data": transformed_data}
             )
             db.commit()
             
@@ -54,7 +75,7 @@ def create_post_endpoint(template_name: str, model: BaseModel) -> Callable:
             return {
                 "message": f"{template_name} submitted successfully",
                 "submission_id": submission_id,
-                "data": data_dict
+                "data": transformed_data
             }
         except Exception as e:
             logger.error(f"Error saving {template_name} submission: {str(e)}")
@@ -102,13 +123,30 @@ def create_get_endpoint(template_name: str, model: BaseModel) -> Callable:
             # Extract the data from the result
             data = result[0]
             
+            # Get the template components
+            template_components = templates_data.get(template_name, [])
+            
+            # Create a mapping from componentName to componentID
+            name_to_id_map = {
+                comp.get("componentName"): comp.get("componentID")
+                for comp in template_components
+                if comp.get("componentID") and comp.get("componentName")
+            }
+            
+            # Transform the data to use componentID as keys
+            transformed_data = {}
+            for component_name, value in data.items():
+                if component_name in name_to_id_map:
+                    component_id = name_to_id_map[component_name]
+                    transformed_data[component_id] = value
+            
             logger.info(f"Retrieved {template_name} submission with ID: {form_id}")
             
             # Return the data
             return {
                 "message": f"Retrieved {template_name} form",
                 "submission_id": form_id,
-                "data": data
+                "data": transformed_data
             }
         except HTTPException:
             raise
