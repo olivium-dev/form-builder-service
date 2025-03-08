@@ -2,7 +2,7 @@ import logging
 import os
 import json
 from typing import Dict, Any
-from sqlalchemy import create_engine, Column, Integer, String, JSON, MetaData, Table
+from sqlalchemy import create_engine, Column, Integer, String, JSON, MetaData, Table, inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -72,7 +72,8 @@ def create_dynamic_table(template_name: str):
     dynamic_tables[table_name] = table
     
     # Create the table if it doesn't exist
-    if not engine.dialect.has_table(engine, table_name):
+    inspector = inspect(engine)
+    if not inspector.has_table(table_name):
         table.create(bind=engine)
         logger.info(f"Created table: {table_name}")
     
