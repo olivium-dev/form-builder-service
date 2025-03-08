@@ -1,0 +1,86 @@
+name: Deploy to EC2 (RAHMAH)
+
+on:
+  workflow_dispatch:
+    inputs:
+      registry:
+        description: 'Docker registry URL '
+        required: true
+        default: 'ghcr.io'
+      service_name:
+        description: 'Service name for deployment'
+        required: true
+        default: 'formbuilder'
+      internal_port:
+        description: 'Internal port of the service'
+        required: true
+        default: '8000'
+      external_port:
+        description: 'External port of the service'
+        required: true
+        default: '10031'
+      server:
+        description: 'Server address for SSH (user@hostname)'
+        required: true
+        default: 'ec2-user@ec2-18-219-24-129.us-east-2.compute.amazonaws.com'
+      ssh_option:
+        description: 'Choose SSH key option (swg or swt)'
+        required: true
+        default: 'swt'
+      db_host:
+        description: 'Database host'
+        required: true
+        default: 'db-alrahma.cnism90ipjjx.us-east-2.rds.amazonaws.com'
+      db_name:
+        description: 'Database name'
+        required: true
+        default: 'formbuilder'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Setup SSH Key and Server Connection
+        run: |
+          mkdir -p ~/.ssh
+          if [ "${{ inputs.ssh_option }}" == "swt" ]; then
+            echo "${{ secrets.SWT_SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_rsa
+          else
+            echo "${{ secrets.SWG_SSH_PRIVATE_KEY }}" | base64 --decode > ~/.ssh/id_rsa
+          fi
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $(echo "${{ inputs.server }}" | awk -F'@' '{print $2}') >> ~/.ssh/known_hosts
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Environment
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ inputs.registry }} -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Docker image
+        env:
+          DB_CONNECTION_STRING: "Host=${{ inputs.db_host }};Database=${{ inputs.db_name }};Username=postgres;Password=${{ secrets.DB_PASSWORD_DEFAULT }};Trust Server Certificate=true;Port=5432"
+        run: |
+          IMAGE_PATH="${{ inputs.registry }}/olivium-dev/${{ inputs.service_name }}:${{ github.run_id }}"
+          docker build -t $IMAGE_PATH \
+            --build-arg CONNECTION_STRING="${DB_CONNECTION_STRING}" .
+          docker push $IMAGE_PATH
+
+      - name: Deploy Docker Image
+        run: |
+          IMAGE_PATH="${{ inputs.registry }}/olivium-dev/${{ inputs.service_name }}:${{ github.run_id }}"
+          ssh -i ~/.ssh/id_rsa -o "StrictHostKeyChecking=no" ${{ inputs.server }} "\
+          docker pull '${IMAGE_PATH}' && \
+          docker service rm formbuilder || echo 'Service not found. Continuing...' && \
+          docker service create \
+            --name formbuilder \
+            --publish published=${{ inputs.external_port }},target=${{ inputs.internal_port }} \
+            --replicas 1 \
+            --env ConnectionStrings__DefaultConnection='Host=${{ inputs.db_host }};Database=${{ inputs.db_name }};Username=postgres;Password=${{ secrets.DB_PASSWORD_DEFAULT }};Trust Server Certificate=true;Port=5432' \
+            '${IMAGE_PATH}'"
