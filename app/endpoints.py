@@ -4,9 +4,9 @@ from typing import Dict, Any, Callable
 from fastapi import Depends, Path, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, insert, select
 
-from app.database import get_db
+from app.database import get_db, create_dynamic_table
 from app.config import load_config
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,9 @@ def create_post_endpoint(template_name: str, model: BaseModel) -> Callable:
     Returns:
         A function that handles POST requests for the template.
     """
+    # Get or create the table for this template
+    table = create_dynamic_table(template_name)
+    
     async def post_endpoint(form_data: model, db: Session = Depends(get_db)):
         """
         Handles form submission for a specific template.
@@ -60,12 +63,9 @@ def create_post_endpoint(template_name: str, model: BaseModel) -> Callable:
                     component_name = id_to_name_map[component_id]
                     transformed_data[component_name] = value
             
-            # Create a table name from the template name
-            table_name = f"{template_name.lower()}_submissions"
-            
-            # Insert the data into the database using text() for SQL
-            query = text(f"INSERT INTO {table_name} (submission_id, data) VALUES (:submission_id, :data)")
-            db.execute(query, {"submission_id": submission_id, "data": transformed_data})
+            # Insert the data into the database using the table
+            stmt = insert(table).values(submission_id=submission_id, data=transformed_data)
+            db.execute(stmt)
             db.commit()
             
             logger.info(f"Saved {template_name} submission with ID: {submission_id}")
@@ -94,6 +94,9 @@ def create_get_endpoint(template_name: str, model: BaseModel) -> Callable:
     Returns:
         A function that handles GET requests for the template.
     """
+    # Get or create the table for this template
+    table = create_dynamic_table(template_name)
+    
     async def get_endpoint(form_id: str = Path(..., description="Unique identifier for the form submission"), 
                           db: Session = Depends(get_db)):
         """
@@ -107,12 +110,9 @@ def create_get_endpoint(template_name: str, model: BaseModel) -> Callable:
             A dictionary with the retrieved form data.
         """
         try:
-            # Create a table name from the template name
-            table_name = f"{template_name.lower()}_submissions"
-            
-            # Query the database for the submission using text() for SQL
-            query = text(f"SELECT data FROM {table_name} WHERE submission_id = :submission_id")
-            result = db.execute(query, {"submission_id": form_id}).fetchone()
+            # Query the database for the submission using the table
+            stmt = select(table.c.data).where(table.c.submission_id == form_id)
+            result = db.execute(stmt).fetchone()
             
             if not result:
                 raise HTTPException(status_code=404, detail=f"{template_name} submission with ID {form_id} not found")
