@@ -18,7 +18,7 @@ on:
       external_port:
         description: 'External port of the service'
         required: true
-        default: '10031'
+        default: '10032'
       server:
         description: 'Server address for SSH (user@hostname)'
         required: true
