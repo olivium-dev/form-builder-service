@@ -715,8 +715,8 @@
         }
       ],
       "output": {
-        "type": "string",
-        "description": "ID of the selected option."
+        "type": "string[]",
+        "description": "IDs of the selected option."
       },
       "validations": [
         {
