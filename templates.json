@@ -225,7 +225,7 @@
           "name": "titleText",
           "type": "string",
           "description": "Screen title",
-          "value": "Let’s celebrate you  🎂"
+          "value": "Let's celebrate you  🎂"
         },
         {
           "name": "alignment",

@@ -45,24 +45,33 @@ def create_post_endpoint(template_name: str, model: BaseModel) -> Callable:
             
             # Convert form data to a dictionary
             data_dict = form_data.model_dump()
+            logger.info(f"Received form data: {data_dict}")
             
             # Get the template components
             template_components = templates_data.get(template_name, [])
             
-            # Create a mapping from componentID to componentName
-            id_to_name_map = {
-                comp.get("componentID"): comp.get("componentName")
-                for comp in template_components
-                if comp.get("componentID") and comp.get("componentName")
-            }
+            # Create a mapping from componentID to componentName and track components with output
+            id_to_name_map = {}
+            name_to_id_map = {}
+            for comp in template_components:
+                comp_id = comp.get("componentID")
+                comp_name = comp.get("componentName")
+                output_type = comp.get("output", {}).get("type", "none")
+                if comp_id and comp_name and output_type != "none":
+                    id_to_name_map[comp_id] = comp_name
+                    name_to_id_map[comp_name] = comp_id
             
-            # Transform the data to use componentName as keys and extract only the values
+            logger.info(f"Component mappings - ID to Name: {id_to_name_map}")
+            
+            # Transform the data to use componentID as keys and extract only the values
             transformed_data = {}
             for component_id, component_data in data_dict.items():
+                logger.info(f"Processing component {component_id} with data {component_data}")
                 if component_id in id_to_name_map:
-                    component_name = id_to_name_map[component_id]
-                    # Store only the value, not the entire component data
-                    transformed_data[component_name] = component_data.get("value")
+                    # Store using componentID as key
+                    transformed_data[component_id] = component_data.get("value")
+            
+            logger.info(f"Transformed data: {transformed_data}")
             
             # Insert the data into the database using the table
             stmt = insert(table).values(submission_id=submission_id, data=transformed_data)
@@ -71,17 +80,11 @@ def create_post_endpoint(template_name: str, model: BaseModel) -> Callable:
             
             logger.info(f"Saved {template_name} submission with ID: {submission_id}")
             
-            # Return success response with simplified data
-            response_data = {}
-            for component_id, component_data in data_dict.items():
-                if component_id in id_to_name_map:
-                    # Include only the value in the response
-                    response_data[component_id] = {"value": component_data.get("value")}
-            
+            # Return success response with the transformed data
             return {
                 "message": f"{template_name} submitted successfully",
                 "submission_id": submission_id,
-                "data": response_data
+                "data": transformed_data
             }
         except Exception as e:
             logger.error(f"Error saving {template_name} submission: {str(e)}")
@@ -130,18 +133,19 @@ def create_get_endpoint(template_name: str, model: BaseModel) -> Callable:
             # Get the template components
             template_components = templates_data.get(template_name, [])
             
-            # Create a mapping from componentName to componentID
-            name_to_id_map = {
-                comp.get("componentName"): comp.get("componentID")
-                for comp in template_components
-                if comp.get("componentID") and comp.get("componentName")
-            }
+            # Create a mapping from componentID to componentName for components with output
+            id_to_name_map = {}
+            for comp in template_components:
+                comp_id = comp.get("componentID")
+                comp_name = comp.get("componentName")
+                output_type = comp.get("output", {}).get("type", "none")
+                if comp_id and comp_name and output_type != "none":
+                    id_to_name_map[comp_id] = comp_name
             
-            # Transform the data to use componentID as keys and wrap values in the expected format
+            # Transform the data to wrap values in the expected format
             transformed_data = {}
-            for component_name, value in data.items():
-                if component_name in name_to_id_map:
-                    component_id = name_to_id_map[component_name]
+            for component_id, value in data.items():
+                if component_id in id_to_name_map:
                     # Wrap the value in a dictionary with a "value" key
                     transformed_data[component_id] = {"value": value}
             

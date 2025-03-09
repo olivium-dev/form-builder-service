@@ -56,8 +56,9 @@ for template_name, template_components in templates_data.items():
     try:
         # Create template model using the component configurations
         model = create_template_model(template_name, template_components, component_models)
-        template_models[template_name] = model
-        logger.info(f"Created template model for: {template_name}")
+        if model:  # Only add models that have fields
+            template_models[template_name] = model
+            logger.info(f"Created template model for: {template_name}")
     except Exception as e:
         logger.error(f"Failed to create template model for {template_name}: {e}")
         raise

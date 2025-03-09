@@ -15,7 +15,7 @@ class ComponentValueModel(BaseModel):
     """Base model for component values."""
     value: Any
 
-def create_component_model(component: Dict[str, Any]) -> BaseModel:
+def create_component_model(component: Dict[str, Any]) -> Optional[Type[BaseModel]]:
     """
     Dynamically creates a Pydantic model for a component based on its configuration.
     
@@ -23,9 +23,9 @@ def create_component_model(component: Dict[str, Any]) -> BaseModel:
         component: A dictionary containing the component configuration.
         
     Returns:
-        A Pydantic BaseModel class for the component.
+        A Pydantic BaseModel class for the component or None if the component has no output.
     """
-    # Extract component name, ID, and attributes
+    # Extract component name, ID, and output type
     component_name = component.get("componentName", "UnknownComponent")
     component_id = component.get("componentID", "unknown-id")
     output_type = component.get("output", {}).get("type", "none")
@@ -34,9 +34,12 @@ def create_component_model(component: Dict[str, Any]) -> BaseModel:
     if output_type == "none":
         return None
     
-    # Create a simple model with just the value field
+    # Get the Python type for the output type
+    python_type = type_mapping.get(output_type, (str, ...))[0]
+    
+    # Create a model with a value field of the appropriate type
     model_name = f"{component_name.replace(' ', '')}Model"
-    return ComponentValueModel
+    return create_model(model_name, value=(python_type, ...))
 
 def create_template_model(template_name: str, template_components: List[Dict[str, Any]], component_models: Dict[str, BaseModel]) -> BaseModel:
     """
@@ -63,10 +66,18 @@ def create_template_model(template_name: str, template_components: List[Dict[str
         if output_type == "none":
             continue
             
-        if component_name in component_models and component_id:
+        if component_name and component_id:
+            # Get the Python type for the output type
+            python_type = type_mapping.get(output_type, (str, ...))[0]
+            # Create a model for this component with the correct type
+            component_model = create_model(
+                f"{component_name}Value",
+                value=(python_type, ...),
+                __base__=BaseModel
+            )
             # Use componentID as the field name
-            field_definitions[component_id] = (ComponentValueModel, ...)
+            field_definitions[component_id] = (component_model, ...)
     
-    # Create and return the model
+    # Create and return the model, even if empty
     model_name = f"{template_name.capitalize()}Model"
     return create_model(model_name, **field_definitions) 
