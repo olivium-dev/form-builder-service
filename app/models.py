@@ -1,6 +1,9 @@
 from collections import Counter
-from typing import Any, Dict, List, Tuple, Optional, Type
+from typing import Any, Dict, List, Tuple, Optional, Type, Generic, TypeVar
 from pydantic import BaseModel, create_model, Field
+from pydantic.generics import GenericModel
+
+T = TypeVar('T')
 
 # Mapping from configuration type strings to Python types (with required ellipsis)
 type_mapping: Dict[str, Tuple[Any, Any]] = {
@@ -18,6 +21,10 @@ type_mapping: Dict[str, Tuple[Any, Any]] = {
 class ComponentValueModel(BaseModel):
     """Base model for component values."""
     value: Any
+
+class ArrayValueModel(GenericModel, Generic[T]):
+    """Generic model for array values."""
+    value: List[T]
 
 def create_component_model(component: Dict[str, Any]) -> Optional[Type[BaseModel]]:
     """
@@ -71,14 +78,27 @@ def create_template_model(template_name: str, template_components: List[Dict[str
             continue
             
         if component_name and component_id:
-            # Get the Python type for the output type
-            python_type = type_mapping.get(output_type, (str, ...))[0]
-            # Create a model for this component with the correct type
-            component_model = create_model(
-                f"{component_name}Value",
-                value=(python_type, ...),
-                __base__=BaseModel
-            )
+            # For array types, use a specialized model that explicitly shows arrays in OpenAPI
+            if output_type.endswith('[]'):
+                # Determine the element type (remove the [] suffix)
+                element_type_name = output_type[:-2]
+                element_type = type_mapping.get(element_type_name, (str, ...))[0]
+                
+                # Create a model with a value field that's explicitly an array
+                component_model = create_model(
+                    f"{component_name}Value",
+                    value=(List[element_type], ...),
+                    __base__=BaseModel
+                )
+            else:
+                # For non-array types, use the standard approach
+                python_type = type_mapping.get(output_type, (str, ...))[0]
+                component_model = create_model(
+                    f"{component_name}Value",
+                    value=(python_type, ...),
+                    __base__=BaseModel
+                )
+                
             # Use componentID as the field name
             field_definitions[component_id] = (component_model, ...)
     
