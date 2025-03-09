@@ -10,6 +10,9 @@ type_mapping: Dict[str, Tuple[Any, Any]] = {
     "object": (dict, ...),
     "array": (list, ...),
     "string[]": (List[str], ...),
+    "number[]": (List[float], ...),
+    "boolean[]": (List[bool], ...),
+    "object[]": (List[dict], ...),
 }
 
 class ComponentValueModel(BaseModel):
