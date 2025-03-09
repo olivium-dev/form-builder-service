@@ -708,9 +708,14 @@
           "value": "horizontal"
         },
         {
+          "name": "type",
+          "description": "Selection type",
+          "value": "multi"
+        },
+        {
           "name": "search",
           "type": "bool",
-          "description": "Adda search bar to filter the items",
+          "description": "Adds search bar to filter the items",
           "value": true
         }
       ],
