@@ -730,5 +730,54 @@
         }
       ]
     }
+  ],
+   "screen-7": [
+    {
+      "componentID": "header-1",
+      "componentName": "Header",
+      "description": "A top area containing the screen's title or heading.",
+      "style": {
+        "type": "string",
+        "description": "CSS style string or class reference for the header."
+      },
+      "attributes": [
+        {
+          "name": "titleText",
+          "type": "string",
+          "description": "Screen title",
+          "value": "Show your best self"
+        },
+        {
+          "name": "alignment",
+          "type": "string",
+          "description": "Text alignment",
+          "value": "left"
+        }
+      ],
+      "output": {
+        "type": "none",
+        "description": "This component does not produce output data."
+      },
+      "validations": []
+    },
+    {
+      "componentID": "image-picker-1",
+      "componentName": "Image picker",
+      "description": "User can select up to 6 images to display on their profile",
+      "attributes": [
+       
+      ],
+      "output": {
+        "type": "string[]",
+        "description": "Images selected"
+      },
+      "validations": [
+        {
+          "type": "min",
+          "value":"2",
+          "description": "Minimum of 2 images required"
+        }
+      ]
+    }
   ]
 }
