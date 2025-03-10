@@ -761,6 +761,34 @@
       "validations": []
     },
     {
+      "componentID": "label-1",
+      "componentName": "Label",
+      "description": "Simple text to display",
+      "style": {
+        "type": "string",
+        "description": "CSS style string or class reference for the text."
+      },
+      "attributes": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": "The text displayed",
+          "value": "Upload up to six of your best photos to make a fantastic first impression."
+        },
+        {
+          "name": "alignment",
+          "type": "string",
+          "description": "Text alignment",
+          "value": "left"
+        }
+      ],
+      "output": {
+        "type": "none",
+        "description": "This component does not produce output data."
+      },
+      "validations": []
+    },
+    {
       "componentID": "image-picker-1",
       "componentName": "Image picker",
       "description": "User can select up to 6 images to display on their profile",
@@ -778,6 +806,30 @@
           "description": "Minimum of 2 images required"
         }
       ]
+    },
+    {
+      "componentID": "switch-1",
+      "componentName": "Switch component",
+      "description": "Switch component with a label and text",
+      "attributes": [
+         {
+          "name": "label",
+          "type": "string",
+          "description": "The title displayed",
+          "value": "Hide my photos"
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "description": "The text displayed",
+          "value": "Hiding your photos will result in reduced visibility and fewer matches."
+        }
+      ],
+      "output": {
+        "type": "bool",
+        "description": "True or Flase depending on the switch state"
+      },
+      "validations": []
     }
   ]
 }
