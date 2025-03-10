@@ -361,7 +361,7 @@
       "validations": []
     },
     {
-      "componentID": "single-selection-1",
+      "componentID": "selection-1",
       "componentName": "Single Selection",
       "description": "A set of radio options from which the user can pick exactly one.",
       "style": {
@@ -449,7 +449,7 @@
       "validations": []
     },
     {
-      "componentID": "single-selection-1",
+      "componentID": "selection-1",
       "componentName": "Single Selection",
       "description": "A set of radio options from which the user can pick exactly one.",
       "style": {
@@ -516,7 +516,7 @@
       ]
     },
     {
-      "componentID": "single-selection-1",
+      "componentID": "selection-1",
       "componentName": "Single Selection",
       "description": "A set of radio options from which the user can pick exactly one.",
       "style": {
@@ -580,7 +580,7 @@
       ]
     },
     {
-      "componentID": "single-selection-1",
+      "componentID": "selection-1",
       "componentName": "Single Selection",
       "description": "A set of radio options from which the user can pick exactly one.",
       "style": {
@@ -662,7 +662,7 @@
       "validations": []
     },
     {
-      "componentID": "single-selection-1",
+      "componentID": "selection-1",
       "componentName": "Single Selection",
       "description": "A set of radio options from which the user can pick exactly one.",
       "style": {
