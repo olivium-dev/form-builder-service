@@ -213,7 +213,21 @@
         "type": "string",
         "description": "The user-entered text."
       },
-      "validations": []
+      "validations": [
+        {
+          "type": "required",
+          "description": "Must not be empty"
+        },
+        {
+            "type": "min",
+          "description": "Minimum number of characters",
+          "value":"3"
+        }, {
+            "type": "max",
+          "description": "Maximum number of characters",
+          "value":"10"
+        }
+      ]
     }
   ],
   "screen-3": [
