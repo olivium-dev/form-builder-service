@@ -110,7 +110,12 @@
         "type": "string",
         "description": "Selected option"
       },
-      "validations": []
+      "validations": [
+         {
+          "type": "required",
+          "description": "At least one selection is required"
+        }
+      ]
     }
   ],
   "screen-2": [
