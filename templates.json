@@ -310,7 +310,12 @@
         "type": "string",
         "description": "The selected date in a standardized format (e.g., ISO)."
       },
-      "validations": []
+      "validations": [
+          {
+          "type": "required",
+          "description": "At least one selection is required"
+        }
+      ]
     }
   ],
   "screen-4": [
