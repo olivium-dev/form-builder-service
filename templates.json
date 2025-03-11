@@ -206,7 +206,7 @@
           "name": "maxLength",
           "type": "number",
           "description": "Maximum allowed length",
-          "value": 0
+          "value": 10
         }
       ],
       "output": {
@@ -217,15 +217,6 @@
         {
           "type": "required",
           "description": "Must not be empty"
-        },
-        {
-            "type": "min",
-          "description": "Minimum number of characters",
-          "value":"3"
-        }, {
-            "type": "max",
-          "description": "Maximum number of characters",
-          "value":"10"
         }
       ]
     }
