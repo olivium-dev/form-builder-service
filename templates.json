@@ -377,7 +377,7 @@
     },
     {
       "componentID": "selection-1",
-      "componentName": "Single Selection",
+      "componentName": "Selection",
       "description": "A set of radio options from which the user can pick exactly one.",
       "style": {
         "type": "string",
@@ -416,10 +416,10 @@
           ]
         },
         {
-          "name": "layout",
+          "name": "type",
           "type": "string",
-          "description": "Option layout",
-          "value": "horizontal"
+          "description": "single or multi",
+          "value": "single"
         }
       ],
       "output": {
@@ -429,7 +429,7 @@
       "validations": [
         {
           "type": "required",
-          "description": "User must select one option if this field is mandatory."
+          "description": "User must select at least option if this field is mandatory."
         }
       ]
     }
@@ -742,6 +742,16 @@
         {
           "type": "required",
           "description": "User must select one option if this field is mandatory."
+        },
+        {
+          "type": "min",
+          "description": "Minimum number of seletions required",
+          "value":"2"
+        },
+        {
+          "type": "max",
+          "description": "Maximum number of selections",
+          "value":"4"
         }
       ]
     }
